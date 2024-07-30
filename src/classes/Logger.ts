@@ -81,6 +81,8 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
             level,
             messages: [message, ...optionalParams]
         };
+
+        const formatted = this.formatter.format(options);
     }
 
     public async createFileWriteStream(options: LoggerWriteStreamOptions): Promise<this> {

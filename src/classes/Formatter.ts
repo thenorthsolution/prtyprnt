@@ -1,6 +1,7 @@
-import { formatWithOptions } from 'util';
+import { formatWithOptions } from 'node:util';
 import { BaseFormatter, type FormatterFormatOptions } from './BaseFormatter.js';
 import type { Logger } from './Logger.js';
+import kleur from 'kleur';
 
 export class Formatter extends BaseFormatter {
     constructor(logger?: Logger) {
@@ -8,10 +9,10 @@ export class Formatter extends BaseFormatter {
     }
 
     public format(options: FormatterFormatOptions): string {
-        return this.logger?.formatter?.format(options) ?? '';
+        return this.stringify(...options.messages);
     }
 
-    public stringify(message: any, ...optionalParams: any[]): string {
-        return formatWithOptions(this.logger?.objectInspectOptions ?? {}, message, ...optionalParams);
+    public stringify(...data: any[]): string {
+        return formatWithOptions(this.logger?.objectInspectOptions ?? { colors: kleur.enabled }, ...data);
     }
 }
