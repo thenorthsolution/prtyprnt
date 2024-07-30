@@ -1,11 +1,12 @@
 import EventEmitter from 'node:events';
 import { Formatter } from './Formatter.js';
 import { createWriteStream, WriteStream, type Stats } from 'node:fs';
-import { LoggerWriteStreamMode } from '../types/constants.js';
+import { LoggerWriteStreamMode, LogLevel } from '../types/constants.js';
 import type { InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
 import { mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import type { FormatterFormatOptions } from './BaseFormatter.js';
 
 export interface LoggerWriteStreamOptions {
     path: string;
@@ -26,13 +27,9 @@ export interface LoggerOptions {
     objectInspectOptions?: InspectOptions;
 }
 
-export interface LoggerEvents {
-    fatal: [message: any, ...optionalParams: any[]];
-    error: [message: any, ...optionalParams: any[]];
-    warn: [message: any, ...optionalParams: any[]];
-    info: [message: any, ...optionalParams: any[]];
-    debug: [message: any, ...optionalParams: any[]];
-}
+export type LoggerEvents = {
+    [event in LogLevel]: [message: string, data: FormatterFormatOptions];
+};
 
 export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions {
     public formatter: Formatter;
@@ -42,7 +39,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
     public writeStream?: WriteStream;
     public objectInspectOptions?: InspectOptions;
 
-    get isDebugging(): boolean {
+    get isDebugging(): boolean {        
         const explicitlyEnabled = typeof this.debugmode?.enabled === 'function' ? this.debugmode.enabled() : this.debugmode?.enabled;
         return explicitlyEnabled ?? (!!inspector.url() || /--debug|--inspect/g.test(process.execArgv.join('')));
     }
@@ -77,6 +74,13 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
 
     public log(message: any, ...optionalParams: any[]): void {
         return this.info(message, ...optionalParams);
+    }
+
+    protected print(level: LogLevel, message: any, ...optionalParams: any[]): void {
+        const options: FormatterFormatOptions = {
+            level,
+            messages: [message, ...optionalParams]
+        };
     }
 
     public async createFileWriteStream(options: LoggerWriteStreamOptions): Promise<this> {
@@ -135,14 +139,14 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         await mkdir(filePathInfo.dir, { recursive: true });
 
         switch (options.mode) {
-            case LoggerWriteStreamMode.APPEND:
+            case LoggerWriteStreamMode.Append:
                 break;
-            case LoggerWriteStreamMode.TRUNCATE:
+            case LoggerWriteStreamMode.Truncate:
                 if (!fileStat) break;
 
                 await writeFile(file, '');
                 break;
-            case LoggerWriteStreamMode.RENAME:
+            case LoggerWriteStreamMode.Rename:
                 if (!fileStat) break;
 
                 if (options.renameFile) {
@@ -155,6 +159,6 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
                 }
         }
 
-        return createWriteStream(file, { flags: options.mode === LoggerWriteStreamMode.APPEND ? 'a' : 'w' });
+        return createWriteStream(file, { flags: options.mode === LoggerWriteStreamMode.Append ? 'a' : 'w' });
     }
 }

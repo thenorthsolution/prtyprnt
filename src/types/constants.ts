@@ -1,13 +1,13 @@
 export enum LogLevel {
-    FATAL = 'FATAL',
-    ERROR = 'ERROR',
-    WARN = 'WARN',
-    INFO = 'INFO',
-    DEBUG = 'DEBUG'
+    Fatal = 'Fatal',
+    Error = 'Error',
+    Warn = 'Warn',
+    Info = 'Info',
+    Debug = 'Debug'
 }
 
 export enum LoggerWriteStreamMode {
-    APPEND = 'APPEND',
-    TRUNCATE = 'TRUNCATE',
-    RENAME = 'RENAME'
+    Append = 'Append',
+    Truncate = 'Truncate',
+    Rename = 'Rename'
 }
