@@ -26,7 +26,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "check": "tsc --noEmit --watch"
+    "check": "tsc --noEmit --watch",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@reciple/utils": "^9.3.1",
