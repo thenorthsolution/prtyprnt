@@ -2,7 +2,7 @@ import EventEmitter from 'node:events';
 import { Formatter } from './Formatter.js';
 import { createWriteStream, WriteStream, type Stats } from 'node:fs';
 import { LoggerWriteStreamMode, LogLevel } from '../types/constants.js';
-import { stripVTControlCharacters, type InspectOptions } from 'node:util';
+import { type InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
@@ -31,7 +31,7 @@ export interface LoggerOptions {
 }
 
 export type LoggerEvents = {
-    [event in LogLevel]: [data: FormatterFormatOptions & { log: string; }];
+    [event in LogLevel]: [data: FormatterFormatOptions & { pretty: string; simple: string; }];
 };
 
 export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions {
@@ -99,11 +99,13 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
             messages: [message, ...optionalParams]
         };
 
-        const formatted = this.formatter.format(options);
+        const pretty = this.formatter.formatConsoleLog(options);
+        const simple = this.formatter.formatWriteStreamLog(options);
 
         this.emit(level, {
             ...options,
-            log: formatted
+            pretty,
+            simple
         });
 
         let writeToFile = true;
@@ -111,17 +113,17 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         switch (level) {
             case LogLevel.Fatal:
             case LogLevel.Error:
-                console.error(formatted);
+                console.error(pretty);
                 break;
             case LogLevel.Warn:
-                console.warn(formatted);
+                console.warn(pretty);
                 break;
             case LogLevel.Info:
-                console.info(formatted);
+                console.info(pretty);
                 break;
             case LogLevel.Debug:
                 if (this.debugmode?.printMessage) {
-                    console.debug(formatted);
+                    console.debug(pretty);
                 }
 
                 writeToFile = this.debugmode?.writeToFile ?? true;
@@ -129,9 +131,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         }
 
         if (!this.isWriteStreamClosed && writeToFile) {
-            const stripped = stripVTControlCharacters(formatted);
-
-            this.writeStream?.write(stripped + '\n', 'utf-8');
+            this.writeStream?.write(`${simple}\n`, 'utf-8');
         }
     }
 

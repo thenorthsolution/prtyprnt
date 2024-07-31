@@ -30,6 +30,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "ansi-regex": "^5.0.1",
     "kleur": "^4.1.5"
   }
 }

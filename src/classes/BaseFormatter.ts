@@ -9,5 +9,6 @@ export interface FormatterFormatOptions {
 export abstract class BaseFormatter {
     constructor(public readonly logger?: Logger) {}
 
-    public abstract format(options: FormatterFormatOptions): string;
+    public abstract formatConsoleLog(options: FormatterFormatOptions): string;
+    public abstract formatWriteStreamLog(options: FormatterFormatOptions): string;
 }
