@@ -5,14 +5,16 @@ import { LoggerWriteStreamMode, LogLevel } from '../types/constants.js';
 import { stripVTControlCharacters, type InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
-import { mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import type { FormatterFormatOptions } from './BaseFormatter.js';
 import type { Args, Key } from '../types/types.js';
+import { Utils } from './Utils.js';
 
 export interface LoggerWriteStreamOptions {
     path: string;
     mode: LoggerWriteStreamMode;
     renameFile?: (file: string, stat: Stats) => any;
+    initialData?: string|((file: string) => string|Promise<string>);
 }
 
 export interface LoggerOptions {
@@ -180,21 +182,25 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
     }
 
     public static async createFileWriteStream(options: LoggerWriteStreamOptions): Promise<WriteStream> {
+        options.initialData ??= Utils.logDateHeader(new Date());
+
         const file = path.resolve(options.path);
         const filePathInfo = path.parse(file);
         const fileStat = await stat(file).catch(() => null);
+        const initialData = (typeof options.initialData !== 'function'
+            ? options.initialData ?? ''
+            : await Promise.resolve(options.initialData(file))) + '\n';
 
         if (fileStat && !fileStat.isFile()) throw new Error('Write stream path is not a file');
 
         await mkdir(filePathInfo.dir, { recursive: true });
 
         switch (options.mode) {
-            case LoggerWriteStreamMode.Append:
-                break;
+            case LoggerWriteStreamMode.Append: break;
             case LoggerWriteStreamMode.Truncate:
                 if (!fileStat) break;
 
-                await writeFile(file, '');
+                await writeFile(file, initialData, 'utf-8');
                 break;
             case LoggerWriteStreamMode.Rename:
                 if (!fileStat) break;
@@ -202,16 +208,21 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
                 if (options.renameFile) {
                     await Promise.resolve(options.renameFile(file, fileStat));
                 } else {
-                    const newPath = path.join(filePathInfo.dir, `${filePathInfo.name}.old${filePathInfo.ext}`);
-
-                    await rm(newPath, { force: true, recursive: true });
-                    await rename(file, newPath);
+                    await Utils.gzipCompressLog(file, fileStat);
                 }
+
+                const newStat = await stat(file).catch(() => null);
+                if (!newStat) await writeFile(file, initialData, 'utf-8');
         }
 
-        return createWriteStream(file, {
+        const writeStream = createWriteStream(file, {
             flags: options.mode === LoggerWriteStreamMode.Append ? 'a' : 'w',
             encoding: 'utf-8'
         });
+
+        const content = await readFile(file, 'utf-8');
+        if (options.initialData && !content) writeStream.write(initialData, 'utf-8');
+
+        return writeStream;
     }
 }
