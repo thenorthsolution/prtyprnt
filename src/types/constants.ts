@@ -6,7 +6,7 @@ export enum LogLevel {
     Debug = 'Debug'
 }
 
-export enum LoggerWriteStreamMode {
+export enum FileWriteStreamMode {
     Append = 'Append',
     Truncate = 'Truncate',
     Rename = 'Rename'

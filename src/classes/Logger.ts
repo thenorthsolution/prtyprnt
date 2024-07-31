@@ -1,7 +1,7 @@
 import EventEmitter from 'node:events';
 import { Formatter } from './Formatter.js';
 import { createWriteStream, WriteStream, type Stats } from 'node:fs';
-import { LoggerWriteStreamMode, LogLevel } from '../types/constants.js';
+import { FileWriteStreamMode, LogLevel } from '../types/constants.js';
 import { type InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
@@ -12,7 +12,7 @@ import { Utils } from './Utils.js';
 
 export interface LoggerWriteStreamOptions {
     path: string;
-    mode: LoggerWriteStreamMode;
+    mode: FileWriteStreamMode;
     renameFile?: (file: string, stat: Stats) => any;
     initialData?: string|((file: string) => string|Promise<string>);
 }
@@ -200,13 +200,13 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         await mkdir(filePathInfo.dir, { recursive: true });
 
         switch (options.mode) {
-            case LoggerWriteStreamMode.Append: break;
-            case LoggerWriteStreamMode.Truncate:
+            case FileWriteStreamMode.Append: break;
+            case FileWriteStreamMode.Truncate:
                 if (!fileStat) break;
 
                 await writeFile(file, initialData, 'utf-8');
                 break;
-            case LoggerWriteStreamMode.Rename:
+            case FileWriteStreamMode.Rename:
                 if (!fileStat) break;
 
                 if (options.renameFile) {
@@ -220,7 +220,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         }
 
         const writeStream = createWriteStream(file, {
-            flags: options.mode === LoggerWriteStreamMode.Append ? 'a' : 'w',
+            flags: options.mode === FileWriteStreamMode.Append ? 'a' : 'w',
             encoding: 'utf-8'
         });
 
