@@ -124,8 +124,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
                 console.info(pretty);
                 break;
             case LogLevel.Debug:
-                const debugmode = typeof this.debugmode?.enabled === 'function' ? this.debugmode.enabled() : this.debugmode?.enabled ?? false;
-                if (!debugmode) break;
+                if (!this.isDebugging) break;
 
                 if (this.debugmode?.printMessage !== false) {
                     console.debug(pretty);
