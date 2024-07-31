@@ -124,7 +124,10 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
                 console.info(pretty);
                 break;
             case LogLevel.Debug:
-                if (this.debugmode?.printMessage) {
+                const debugmode = typeof this.debugmode?.enabled === 'function' ? this.debugmode.enabled() : this.debugmode?.enabled ?? false;
+                if (!debugmode) break;
+
+                if (this.debugmode?.printMessage !== false) {
                     console.debug(pretty);
                 }
 
@@ -166,7 +169,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         });
     }
 
-    emit<K>(eventName: Key<K, LoggerEvents>, ...args: Args<K, LoggerEvents>): boolean {
+    public emit<K>(eventName: Key<K, LoggerEvents>, ...args: Args<K, LoggerEvents>): boolean {
         const result = super.emit<K>(eventName, ...args);
         if (this.parent) this.parent.emit(eventName, ...args);
         return result;
