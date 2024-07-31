@@ -54,7 +54,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
     constructor(options?: LoggerOptions) {
         super();
 
-        this.formatter = options?.formatter ?? new Formatter();
+        this.formatter = options?.formatter ?? new Formatter(this);
         this.parent = options?.parent;
         this.label = options?.label;
         this.debugmode = options?.debugmode ?? {};
@@ -67,6 +67,8 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         this.info = this.info.bind(this);
         this.debug = this.debug.bind(this);
         this.log = this.log.bind(this);
+
+        this.formatter.setLogger(this);
     }
 
     public fatal(message: any, ...optionalParams: any[]): void {

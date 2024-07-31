@@ -61,21 +61,41 @@ export class Formatter extends BaseFormatter {
         const date = new Date();
         const time = date.toLocaleTimeString(undefined, { hour12: false });
 
-        let prefix: string;
+        let prefix: string = '';
 
         switch (level) {
             case LogLevel.Fatal:
             case LogLevel.Error:
-                prefix = kleur.bgRed().bold().black(` ${level.toUpperCase()} `);
+                prefix += kleur.bgRed().bold().black(` ${level.toUpperCase()} `);
+
+                if (this.logger?.label) {
+                    prefix += kleur.bgBlack().red().dim(` ${this.logger.label}`);
+                }
+
                 break;
             case LogLevel.Warn:
-                prefix = kleur.bgYellow().bold().black(` ${level.toUpperCase()} `);
+                prefix += kleur.bgYellow().bold().black(` ${level.toUpperCase()}  `);
+
+                if (this.logger?.label) {
+                    prefix += kleur.bgBlack().yellow().dim(` ${this.logger.label}`);
+                }
+
                 break;
             case LogLevel.Info:
-                prefix = kleur.bgWhite().bold().black(` ${level.toUpperCase()} `);
+                prefix += kleur.bgCyan().bold().black(` ${level.toUpperCase()}  `);
+
+                if (this.logger?.label) {
+                    prefix += kleur.bgBlack().cyan().dim(` ${this.logger.label}`);
+                }
+
                 break;
             case LogLevel.Debug:
-                prefix = kleur.bgMagenta().bold().white(` ${level.toUpperCase()} `);
+                prefix += kleur.bgMagenta().bold().white(` ${level.toUpperCase()} `);
+
+                if (this.logger?.label) {
+                    prefix += kleur.bgBlack().magenta().dim(` ${this.logger.label}`);
+                }
+
                 break;
         }
 

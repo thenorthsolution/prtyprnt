@@ -7,7 +7,11 @@ export interface FormatterFormatOptions {
 }
 
 export abstract class BaseFormatter {
-    constructor(public readonly logger?: Logger) {}
+    constructor(public logger?: Logger) {}
+
+    public setLogger(logger: Logger) {
+        this.logger = logger;
+    }
 
     public abstract formatConsoleLog(options: FormatterFormatOptions): string;
     public abstract formatWriteStreamLog(options: FormatterFormatOptions): string;
