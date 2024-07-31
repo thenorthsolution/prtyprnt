@@ -2,11 +2,12 @@ import EventEmitter from 'node:events';
 import { Formatter } from './Formatter.js';
 import { createWriteStream, WriteStream, type Stats } from 'node:fs';
 import { LoggerWriteStreamMode, LogLevel } from '../types/constants.js';
-import type { InspectOptions } from 'node:util';
+import { stripVTControlCharacters, type InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
 import { mkdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import type { FormatterFormatOptions } from './BaseFormatter.js';
+import type { Args, Key } from '../types/types.js';
 
 export interface LoggerWriteStreamOptions {
     path: string;
@@ -28,7 +29,7 @@ export interface LoggerOptions {
 }
 
 export type LoggerEvents = {
-    [event in LogLevel]: [message: string, data: FormatterFormatOptions];
+    [event in LogLevel]: [data: FormatterFormatOptions & { log: string; }];
 };
 
 export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions {
@@ -39,9 +40,13 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
     public writeStream?: WriteStream;
     public objectInspectOptions?: InspectOptions;
 
-    get isDebugging(): boolean {        
+    get isDebugging(): boolean {
         const explicitlyEnabled = typeof this.debugmode?.enabled === 'function' ? this.debugmode.enabled() : this.debugmode?.enabled;
         return explicitlyEnabled ?? (!!inspector.url() || /--debug|--inspect/g.test(process.execArgv.join('')));
+    }
+
+    get isWriteStreamClosed(): boolean {
+        return !this.writeStream || this.writeStream.closed || this.writeStream.destroyed;
     }
 
     constructor(options?: LoggerOptions) {
@@ -62,15 +67,25 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         this.log = this.log.bind(this);
     }
 
-    public fatal(message: any, ...optionalParams: any[]): void {}
+    public fatal(message: any, ...optionalParams: any[]): void {
+        return this.print(LogLevel.Fatal, message, ...optionalParams);
+    }
 
-    public error(message: any, ...optionalParams: any[]): void {}
+    public error(message: any, ...optionalParams: any[]): void {
+        return this.print(LogLevel.Error, message, ...optionalParams);
+    }
 
-    public warn(message: any, ...optionalParams: any[]): void {}
+    public warn(message: any, ...optionalParams: any[]): void {
+        return this.print(LogLevel.Warn, message, ...optionalParams);
+    }
 
-    public info(message: any, ...optionalParams: any[]): void {}
+    public info(message: any, ...optionalParams: any[]): void {
+        return this.print(LogLevel.Info, message, ...optionalParams);
+    }
 
-    public debug(message: any, ...optionalParams: any[]): void {}
+    public debug(message: any, ...optionalParams: any[]): void {
+        return this.print(LogLevel.Debug, message, ...optionalParams);
+    }
 
     public log(message: any, ...optionalParams: any[]): void {
         return this.info(message, ...optionalParams);
@@ -83,10 +98,43 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         };
 
         const formatted = this.formatter.format(options);
+
+        this.emit(level, {
+            ...options,
+            log: formatted
+        });
+
+        let writeToFile = true;
+
+        switch (level) {
+            case LogLevel.Fatal:
+            case LogLevel.Error:
+                console.error(formatted);
+                break;
+            case LogLevel.Warn:
+                console.warn(formatted);
+                break;
+            case LogLevel.Info:
+                console.info(formatted);
+                break;
+            case LogLevel.Debug:
+                if (this.debugmode?.printMessage) {
+                    console.debug(formatted);
+                }
+
+                writeToFile = this.debugmode?.writeToFile ?? true;
+                break;
+        }
+
+        if (!this.isWriteStreamClosed && writeToFile) {
+            const stripped = stripVTControlCharacters(formatted);
+
+            this.writeStream?.write(stripped + '\n', 'utf-8');
+        }
     }
 
     public async createFileWriteStream(options: LoggerWriteStreamOptions): Promise<this> {
-        if (this.writeStream && !this.writeStream.closed && !this.writeStream.destroyed) {
+        if (!this.isWriteStreamClosed) {
             throw new Error('Write stream already created');
         }
 
@@ -96,11 +144,11 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
 
     public async closeFileWriteStream(): Promise<this> {
         await new Promise((resolve) => {
-            if (!this.writeStream || this.writeStream.closed || this.writeStream.destroyed) {
+            if (!this.isWriteStreamClosed) {
                 return resolve(this);
             }
 
-            this.writeStream.close(resolve);
+            this.writeStream?.close(resolve);
         });
 
         return this;
@@ -114,8 +162,8 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         });
     }
 
-    public emit<K>(eventName: K, ...args: K extends never ? LoggerEvents[K] : never): boolean {
-        const result = super.emit(eventName, ...args);
+    emit<K>(eventName: Key<K, LoggerEvents>, ...args: Args<K, LoggerEvents>): boolean {
+        const result = super.emit<K>(eventName, ...args);
         if (this.parent) this.parent.emit(eventName, ...args);
         return result;
     }
@@ -161,6 +209,9 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
                 }
         }
 
-        return createWriteStream(file, { flags: options.mode === LoggerWriteStreamMode.Append ? 'a' : 'w' });
+        return createWriteStream(file, {
+            flags: options.mode === LoggerWriteStreamMode.Append ? 'a' : 'w',
+            encoding: 'utf-8'
+        });
     }
 }
