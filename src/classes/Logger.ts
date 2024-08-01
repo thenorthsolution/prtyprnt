@@ -71,34 +71,34 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         this.formatter.setLogger(this);
     }
 
-    public fatal(message: any, ...optionalParams: any[]): void {
-        return this.print(LogLevel.Fatal, message, ...optionalParams);
+    public fatal(...data: any[]): void {
+        return this.print(LogLevel.Fatal, ...data);
     }
 
-    public error(message: any, ...optionalParams: any[]): void {
-        return this.print(LogLevel.Error, message, ...optionalParams);
+    public error(...data: any[]): void {
+        return this.print(LogLevel.Error, ...data);
     }
 
-    public warn(message: any, ...optionalParams: any[]): void {
-        return this.print(LogLevel.Warn, message, ...optionalParams);
+    public warn(...data: any[]): void {
+        return this.print(LogLevel.Warn, ...data);
     }
 
-    public info(message: any, ...optionalParams: any[]): void {
-        return this.print(LogLevel.Info, message, ...optionalParams);
+    public info(...data: any[]): void {
+        return this.print(LogLevel.Info, ...data);
     }
 
-    public debug(message: any, ...optionalParams: any[]): void {
-        return this.print(LogLevel.Debug, message, ...optionalParams);
+    public debug(...data: any[]): void {
+        return this.print(LogLevel.Debug, ...data);
     }
 
-    public log(message: any, ...optionalParams: any[]): void {
-        return this.info(message, ...optionalParams);
+    public log(...data: any[]): void {
+        return this.info(...data);
     }
 
-    protected print(level: LogLevel, message: any, ...optionalParams: any[]): void {
+    protected print(level: LogLevel, ...data: any[]): void {
         const options: FormatterFormatOptions = {
             level,
-            messages: [message, ...optionalParams]
+            messages: data
         };
 
         const pretty = this.formatter.formatConsoleLog(options);
