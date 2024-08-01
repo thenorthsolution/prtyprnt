@@ -4,6 +4,7 @@ import type { Logger } from './Logger.js';
 import kleur from 'kleur';
 import { LogLevel } from '../types/constants.js';
 import ansiRegex from 'ansi-regex';
+import { Utils } from './Utils.js';
 
 export class Formatter extends BaseFormatter {
     public disabled: boolean = false;
@@ -13,6 +14,8 @@ export class Formatter extends BaseFormatter {
     }
 
     public formatConsoleLog(options: FormatterFormatOptions): string {
+        if (!Utils.supportsColor()) return this.formatWriteStreamLog(options);
+
         const string: string = this.stringify(...options.messages);
         const prefix: string = this.getConsoleLogPrefix(options.level);
 
@@ -44,7 +47,7 @@ export class Formatter extends BaseFormatter {
     }
 
     public stringify(...data: any[]): string {
-        return formatWithOptions(this.logger?.objectInspectOptions ?? { colors: kleur.enabled }, ...data);
+        return formatWithOptions(this.logger?.objectInspectOptions ?? { colors: Utils.supportsColor() }, ...data);
     }
 
     public appendPrefix(string: string, prefix: string): string {
@@ -69,7 +72,7 @@ export class Formatter extends BaseFormatter {
                 prefix += kleur.bgRed().bold().black(` ${level.toUpperCase()} `);
 
                 if (this.logger?.label) {
-                    prefix += kleur.bgBlack().red().dim(` ${this.logger.label}`);
+                    prefix += kleur.bgBlack().red().dim(` ${this.logger.label} `);
                 }
 
                 break;
@@ -77,7 +80,7 @@ export class Formatter extends BaseFormatter {
                 prefix += kleur.bgYellow().bold().black(` ${level.toUpperCase()}  `);
 
                 if (this.logger?.label) {
-                    prefix += kleur.bgBlack().yellow().dim(` ${this.logger.label}`);
+                    prefix += kleur.bgBlack().yellow().dim(` ${this.logger.label} `);
                 }
 
                 break;
@@ -85,7 +88,7 @@ export class Formatter extends BaseFormatter {
                 prefix += kleur.bgCyan().bold().black(` ${level.toUpperCase()}  `);
 
                 if (this.logger?.label) {
-                    prefix += kleur.bgBlack().cyan().dim(` ${this.logger.label}`);
+                    prefix += kleur.bgBlack().cyan().dim(` ${this.logger.label} `);
                 }
 
                 break;
@@ -99,7 +102,7 @@ export class Formatter extends BaseFormatter {
                 break;
         }
 
-        prefix += kleur.bgBlack().gray(` ${time} `);
+        prefix += kleur.gray(` ${time} `);
 
         return `${prefix}${kleur.gray(':')} `;
     }

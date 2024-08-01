@@ -1,3 +1,4 @@
+import kleur from 'kleur';
 import type { Stats } from 'node:fs';
 import { readFile, rename, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -5,6 +6,10 @@ import { brotliCompress, gzip } from 'node:zlib';
 
 export class Utils {
     private constructor() {}
+
+    public static supportsColor(): boolean {
+        return kleur.enabled;
+    }
 
     public static async getFileCreationDate(file: string, options?: { statData?: Stats; lines?: string[] }): Promise<Date> {
         const statData = options?.statData ?? await stat(file);
