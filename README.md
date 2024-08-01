@@ -34,7 +34,7 @@ const logger = new Logger({
         printMessage: true, // Print debug messages to console
         writeToFile: true // Write debug messages to a file
     },
-    writeStream: Logger.createFileWriteStream({
+    writeStream: await Logger.createFileWriteStream({
         mode: FileWriteStreamMode.Rename, // Mode when dealing with old log file
         filename: './logs/latest.log', // Filename of the log file
         renameFile: Utils.gzipCompressLog // Function to rename the log file
