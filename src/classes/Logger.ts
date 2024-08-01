@@ -35,7 +35,7 @@ export type LoggerEvents = {
 };
 
 export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions {
-    public formatter: Formatter;
+    public formatter: BaseFormatter;
     public parent?: Logger;
     public label?: string;
     public debugmode?: LoggerOptions['debugmode'];
