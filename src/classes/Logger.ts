@@ -6,7 +6,7 @@ import { type InspectOptions } from 'node:util';
 import inspector from 'node:inspector';
 import path from 'node:path';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
-import type { FormatterFormatOptions } from './BaseFormatter.js';
+import type { BaseFormatter, FormatterFormatOptions } from './BaseFormatter.js';
 import type { Args, Key } from '../types/types.js';
 import { Utils } from './Utils.js';
 
@@ -18,7 +18,7 @@ export interface LoggerWriteStreamOptions {
 }
 
 export interface LoggerOptions {
-    formatter?: Formatter;
+    formatter?: BaseFormatter;
     parent?: Logger;
     label?: string;
     debugmode?: {
