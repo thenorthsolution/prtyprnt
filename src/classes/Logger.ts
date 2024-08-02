@@ -35,12 +35,21 @@ export type LoggerEvents = {
 };
 
 export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions {
+    private _writeStream?: WriteStream;
+
     public formatter: BaseFormatter;
     public parent?: Logger;
     public label?: string;
     public debugmode?: LoggerOptions['debugmode'];
-    public writeStream?: WriteStream;
     public objectInspectOptions?: InspectOptions;
+
+    get writeStream(): WriteStream | undefined {
+        return this._writeStream ?? this.parent?.writeStream;
+    }
+
+    set writeStream(value: WriteStream | undefined) {
+        this._writeStream = value;
+    }
 
     get isDebugging(): boolean {
         const explicitlyEnabled = typeof this.debugmode?.enabled === 'function' ? this.debugmode.enabled() : this.debugmode?.enabled;
