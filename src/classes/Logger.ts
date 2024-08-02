@@ -49,6 +49,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
 
     set writeStream(value: WriteStream | undefined) {
         this._writeStream = value;
+        if (this.parent && !this.parent?.writeStream) this.parent.writeStream = value;
     }
 
     get isDebugging(): boolean {
