@@ -1,23 +1,19 @@
 import { formatWithOptions, stripVTControlCharacters } from 'node:util';
 import { BaseFormatter, type FormatterFormatOptions } from './BaseFormatter.js';
-import type { Logger } from './Logger.js';
 import kleur from 'kleur';
 import { LogLevel } from '../types/constants.js';
 import ansiRegex from 'ansi-regex';
 import { Utils } from './Utils.js';
+import type { Logger } from './Logger.js';
 
 export class Formatter extends BaseFormatter {
     public disabled: boolean = false;
 
-    constructor(logger?: Logger) {
-        super(logger);
-    }
-
     public formatConsoleLog(options: FormatterFormatOptions): string {
         if (!Utils.supportsColor()) return this.formatWriteStreamLog(options);
 
-        const string: string = this.stringify(...options.messages);
-        const prefix: string = this.getConsoleLogPrefix(options.level);
+        const string: string = this.stringify(options.logger, ...options.messages);
+        const prefix: string = this.getConsoleLogPrefix(options.level, options.logger);
 
         if (this.disabled) return string;
 
@@ -40,14 +36,14 @@ export class Formatter extends BaseFormatter {
     }
 
     public formatWriteStreamLog(options: FormatterFormatOptions): string {
-        const string: string = this.stringify(...options.messages);
-        const prefix: string = this.getWriteStreamLogPrefix(options.level);
+        const string: string = this.stringify(options.logger, ...options.messages);
+        const prefix: string = this.getWriteStreamLogPrefix(options.level, options.logger);
 
         return stripVTControlCharacters(this.disabled ? string : this.appendPrefix(string, prefix));
     }
 
-    public stringify(...data: any[]): string {
-        return formatWithOptions(this.logger?.objectInspectOptions ?? { colors: Utils.supportsColor() }, ...data);
+    public stringify(logger: Logger, ...data: any[]): string {
+        return formatWithOptions(logger?.objectInspectOptions ?? { colors: Utils.supportsColor() }, ...data);
     }
 
     public appendPrefix(string: string, prefix: string): string {
@@ -60,7 +56,7 @@ export class Formatter extends BaseFormatter {
         return lines.join('\n');
     }
 
-    public getConsoleLogPrefix(level: LogLevel): string {
+    public getConsoleLogPrefix(level: LogLevel, logger: Logger): string {
         const date = new Date();
         const time = date.toLocaleTimeString(undefined, { hour12: false });
 
@@ -71,32 +67,32 @@ export class Formatter extends BaseFormatter {
             case LogLevel.Error:
                 prefix += kleur.bgRed().bold().black(` ${level.toUpperCase()} `);
 
-                if (this.logger?.label) {
-                    prefix += kleur.bgBlack().red().dim(` ${this.logger.label} `);
+                if (logger?.label) {
+                    prefix += kleur.bgBlack().red().dim(` ${logger.label} `);
                 }
 
                 break;
             case LogLevel.Warn:
                 prefix += kleur.bgYellow().bold().black(` ${level.toUpperCase()}  `);
 
-                if (this.logger?.label) {
-                    prefix += kleur.bgBlack().yellow().dim(` ${this.logger.label} `);
+                if (logger?.label) {
+                    prefix += kleur.bgBlack().yellow().dim(` ${logger.label} `);
                 }
 
                 break;
             case LogLevel.Info:
                 prefix += kleur.bgCyan().bold().black(` ${level.toUpperCase()}  `);
 
-                if (this.logger?.label) {
-                    prefix += kleur.bgBlack().cyan().dim(` ${this.logger.label} `);
+                if (logger?.label) {
+                    prefix += kleur.bgBlack().cyan().dim(` ${logger.label} `);
                 }
 
                 break;
             case LogLevel.Debug:
                 prefix += kleur.bgMagenta().bold().white(` ${level.toUpperCase()} `);
 
-                if (this.logger?.label) {
-                    prefix += kleur.bgBlack().magenta().dim(` ${this.logger.label}`);
+                if (logger?.label) {
+                    prefix += kleur.bgBlack().magenta().dim(` ${logger.label}`);
                 }
 
                 break;
@@ -107,14 +103,14 @@ export class Formatter extends BaseFormatter {
         return `${prefix}${kleur.gray(':')} `;
     }
 
-    public getWriteStreamLogPrefix(level: LogLevel): string {
+    public getWriteStreamLogPrefix(level: LogLevel, logger: Logger): string {
         const date = new Date();
         const time = date.toLocaleTimeString(undefined, { hour12: false });
 
         let prefix: string = `[${time}]`;
 
-        if (this.logger?.label) {
-            prefix += ` [${this.logger.label}/${level.toUpperCase()}]`;
+        if (logger?.label) {
+            prefix += ` [${logger.label}/${level.toUpperCase()}]`;
         } else {
             prefix += ` [${level.toUpperCase()}]`;
         }
