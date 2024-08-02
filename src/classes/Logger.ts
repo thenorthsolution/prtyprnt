@@ -224,6 +224,8 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
             encoding: 'utf-8'
         });
 
+        await new Promise((resolve) => writeStream.on('open', resolve));
+
         const content = await readFile(file, 'utf-8');
         if (options.initialData && !content) writeStream.write(initialData, 'utf-8');
 
