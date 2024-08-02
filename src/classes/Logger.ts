@@ -73,10 +73,16 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
 
         this.fatal = this.fatal.bind(this);
         this.error = this.error.bind(this);
-        this.warn = this.warn.bind(this);
+        this.warning = this.warning.bind(this);
         this.info = this.info.bind(this);
         this.debug = this.debug.bind(this);
         this.log = this.log.bind(this);
+        this.warn = this.warn.bind(this);
+        this.err = this.err.bind(this);
+        this.print = this.print.bind(this);
+        this.createFileWriteStream = this.createFileWriteStream.bind(this);
+        this.closeFileWriteStream = this.closeFileWriteStream.bind(this);
+        this.clone = this.clone.bind(this);
     }
 
     public fatal(...data: any[]): void {
@@ -87,7 +93,7 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
         return this.print(LogLevel.Error, ...data);
     }
 
-    public warn(...data: any[]): void {
+    public warning(...data: any[]): void {
         return this.print(LogLevel.Warn, ...data);
     }
 
@@ -101,6 +107,14 @@ export class Logger extends EventEmitter<LoggerEvents> implements LoggerOptions 
 
     public log(...data: any[]): void {
         return this.info(...data);
+    }
+
+    public warn(...data: any[]): void {
+        return this.warning(...data);
+    }
+
+    public err(...data: any[]): void {
+        return this.error(...data);
     }
 
     protected print(level: LogLevel, ...data: any[]): void {
